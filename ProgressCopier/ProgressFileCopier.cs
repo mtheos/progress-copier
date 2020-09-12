@@ -4,12 +4,11 @@ using System.IO;
 using System.Linq;
 
 namespace ProgressCopier {
-    public class ProgressFileCopier {
+    public class ProgressFileCopier : IProgressCopier {
         private const int MEGABYTE = 1024 * 1024;
         private readonly ConsoleProgressBar _consoleProgressBar;
         private FileStream _source;
         private FileStream _dest;
-        // ReSharper disable once MemberCanBePrivate.Global
         public bool Cancel { private get; set; }
 
 
@@ -17,7 +16,6 @@ namespace ProgressCopier {
 
         public ProgressFileCopier (ConsoleProgressBar cpb) => _consoleProgressBar = cpb;
 
-        // ReSharper disable once UnusedMember.Global
         public void Copy (string sourceFile, string destinationFile, bool overwrite = false) {
             Cancel = false;
             if (!OKToContinue(sourceFile, destinationFile, overwrite)) return;
@@ -46,7 +44,8 @@ namespace ProgressCopier {
             _source.Dispose();
             _dest.Dispose();
             _consoleProgressBar.SafeStartStopTimer();
-            if (File.Exists(destinationFile)) File.Delete(destinationFile);
+            if (File.Exists(destinationFile))
+                File.Delete(destinationFile);
         }
 
         [Pure]
@@ -65,7 +64,8 @@ namespace ProgressCopier {
             if (ok) {
                 long fileLength = new FileInfo(sourceFile).Length;
                 long freeSpace = GetFreeSpace(destinationFile.First());
-                if (fileLength > freeSpace) Console.WriteLine($"There is not enough space on {destinationFile.First()}. {((float)fileLength - freeSpace) / 1_000_000} more MB are needed");
+                if (fileLength > freeSpace)
+                    Console.WriteLine($"There is not enough space on {destinationFile.First()}. {((float)fileLength - freeSpace) / 1_000_000} more MB are needed");
             }
             if (!File.Exists(sourceFile)) {
                 Console.WriteLine($"The path {sourceFile} does not exist.");

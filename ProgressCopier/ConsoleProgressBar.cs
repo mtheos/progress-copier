@@ -3,6 +3,7 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Timers;
+using ProgressCopier.Annotations;
 using Timer = System.Timers.Timer;
 
 namespace ProgressCopier {
@@ -33,6 +34,7 @@ namespace ProgressCopier {
             }
         }
 
+        [NotifyPropertyChangedInvocator]
         protected virtual void OnPropertyChanged ([CallerMemberName] string propertyName = null) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
 
         public virtual void OnComplete () => Completed?.Invoke();
