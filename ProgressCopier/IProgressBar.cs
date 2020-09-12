@@ -1,5 +1,7 @@
 ﻿namespace ProgressCopier {
     public interface IProgressBar {
-        string GetProgressBar (double percentage);
+        double Percentage { get; set; }
+        string GetProgressBar ();
+        void OnComplete ();
     }
 }

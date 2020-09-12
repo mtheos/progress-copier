@@ -1,39 +1,61 @@
 ﻿using System;
-using System.Text;
+using System.ComponentModel;
+using System.Diagnostics;
+using System.Runtime.CompilerServices;
+using ProgressCopier.Annotations;
 
 namespace ProgressCopier {
     public abstract class ProgressBar : IProgressBar {
-        /// <summary>
-        /// If used, must be a 5 char array with characters for
-        /// 'start of bar', 'completed segment', 'current segment', 'uncompleted segment' and 'end of bar' in that order. i.e. { '[', '=', '>', '-', ']' }
-        /// </summary>
-        private readonly char[] _segChars = { '[', '=', '>', '-', ']' };
+        private readonly Stopwatch _intervalTimer;
+        private readonly double _interval;
 
-        private int _barLength;
-        private int BarLength {
-            get => _barLength;
+        protected ProgressBar (double interval = 100) {
+            _interval = interval;
+            _intervalTimer = Stopwatch.StartNew();
+            PropertyChanged = PropertyChanged is null ? OnPropertyChanged : (PropertyChangedEventHandler)null;
+        }
+
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        public event ProgressChangedEventHandler ProgressChanged;
+
+        public delegate void ProgressChangedEventHandler ();
+
+        public event CompletedEventHandler Completed;
+
+        public delegate void CompletedEventHandler ();
+
+        private double _percentage;
+        public double Percentage {
+            get => _percentage;
             set {
-                if (_barLength < 0)
-                    throw new ArgumentOutOfRangeException(nameof(BarLength), "Bar length must be non-negative");
-                _barLength = value;
+                if (value < 0 || value > 1)
+                    throw new ArgumentOutOfRangeException(nameof(value), $"0 <= value <= 1 must hold. Given: {value}");
+                _percentage = value;
+                OnPropertyChanged();
             }
         }
 
-        protected ProgressBar (int barLength, char[] segChars = null) {
-            BarLength = barLength;
-            if (segChars == null)
-                return; // use default
-            if (segChars.Length != 5)
-                throw new Exception(@"Array must contain 5 characters.");
-            _segChars = segChars;
+        [NotifyPropertyChangedInvocator]
+        protected virtual void OnPropertyChanged ([CallerMemberName] string propertyName = null) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+
+        public virtual void OnComplete () => Completed?.Invoke();
+
+        private void OnPropertyChanged (object sender, PropertyChangedEventArgs propertyChangedEventArgs) => UpdateProgress();
+
+        private void UpdateProgress () {
+            if (_intervalTimer.ElapsedMilliseconds > _interval) {
+                _intervalTimer.Restart();
+                ProgressChanged?.Invoke();
+            }
+            // ReSharper disable once CompareOfFloatsByEqualityOperator
+            if (Percentage == 1) { // Must hold as what we copy is exactly the whole file
+                ProgressChanged?.Invoke();
+                OnComplete();
+            }
         }
 
-        public string GetProgressBar (double percentage) {
-            int usedSegments = (int)(BarLength * percentage);
-            StringBuilder sb = new StringBuilder($"{_segChars[0]}{new string(_segChars[1], usedSegments)}{new string(_segChars[3], BarLength - usedSegments)}{_segChars[4]}");
-            if (usedSegments != BarLength)
-                sb[usedSegments + 1] = _segChars[2];
-            return sb.ToString();
-        }
+        public abstract string GetProgressBar ();
+
     }
 }

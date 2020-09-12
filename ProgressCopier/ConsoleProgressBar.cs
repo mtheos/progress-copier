@@ -1,82 +1,41 @@
 ﻿using System;
-using System.ComponentModel;
-using System.Runtime.CompilerServices;
-using System.Threading;
-using System.Timers;
-using ProgressCopier.Annotations;
-using Timer = System.Timers.Timer;
+using System.Text;
 
 namespace ProgressCopier {
-    public class ConsoleProgressBar : ProgressBar, INotifyPropertyChanged {
-        private readonly Timer _timer;
-        public bool UseTimer = true;
-        private int _locks;
-        private bool _hasCompleted;
-
-        public event PropertyChangedEventHandler PropertyChanged;
-
-        public event ProgressChangedEventHandler ProgressChanged;
-
-        public delegate void ProgressChangedEventHandler ();
-
-        public event CompletedEventHandler Completed;
-
-        public delegate void CompletedEventHandler ();
-
-        private double _percentage;
-        public double Percentage {
-            get => _percentage;
-            set {
-                if (value < 0 || value > 1)
-                    throw new ArgumentOutOfRangeException(nameof(value), $"0 <= value <= 1 must hold. Given: {value}");
-                _percentage = value;
-                OnPropertyChanged();
-            }
+    public class ConsoleProgressBar: ProgressBar {
+        public ConsoleProgressBar(int barLength = 10, double interval = 100, char[] segChars = null) : base(interval) {
+            BarLength = barLength;
+            if (segChars == null)
+                return; // use default
+            if (segChars.Length != 5)
+                throw new Exception(@"Array must contain 5 characters.");
+            _segChars = segChars;
         }
-
-        [NotifyPropertyChangedInvocator]
-        protected virtual void OnPropertyChanged ([CallerMemberName] string propertyName = null) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-
-        public virtual void OnComplete () => Completed?.Invoke();
-
-        private void OnPropertyChanged (object sender, PropertyChangedEventArgs propertyChangedEventArgs) => UpdateProgress();
-
-        private void OnInterval (object sender, ElapsedEventArgs e) => UpdateProgress();
 
         private static readonly object ConsoleLock = new object();
 
-        private void UpdateProgress () {
-            _locks++;
-            lock (ConsoleLock) {
-                _hasCompleted = false;
-                ProgressChanged?.Invoke();
-                // ReSharper disable once CompareOfFloatsByEqualityOperator
-                if (Percentage == 1) { // Set as copied / file size, if this doesn't hold bad things have probably happened
-                    Completed?.Invoke();
-                    _hasCompleted = true;
-                }
-                _locks--;
+        /// <summary>
+        /// If used, must be a 5 char array with characters for
+        /// 'start of bar', 'completed segment', 'current segment', 'uncompleted segment' and 'end of bar' in that order. i.e. { '[', '=', '>', '-', ']' }
+        /// </summary>
+        private readonly char[] _segChars = { '[', '=', '>', '-', ']' };
+
+        private int _barLength;
+        private int BarLength {
+            get => _barLength;
+            set {
+                if (_barLength < 0)
+                    throw new ArgumentOutOfRangeException(nameof(BarLength), "Bar length must be non-negative");
+                _barLength = value;
             }
         }
 
-        public virtual void ForceUpdate () => ProgressChanged?.Invoke();
-
-        public ConsoleProgressBar (int barLength = 10, double interval = 100) : base(barLength) {
-            _timer = new Timer { Interval = interval };
-            _timer.Elapsed += OnInterval;
-        }
-
-        public void SafeStartStopTimer () {
-            if (UseTimer) {
-                PropertyChanged = null;
-                if (_timer.Enabled) {
-                    while (!_hasCompleted) Thread.Sleep(TimeSpan.FromMilliseconds(100));
-                    _timer.Stop();
-                    while (_locks > 0) Thread.Sleep(TimeSpan.FromMilliseconds(1));
-                } else
-                    _timer.Start();
-            } else
-                PropertyChanged = PropertyChanged is null ? OnPropertyChanged : (PropertyChangedEventHandler)null;
+        public override string GetProgressBar() {
+            int usedSegments = (int)(BarLength * Percentage);
+            StringBuilder sb = new StringBuilder($"{_segChars[0]}{new string(_segChars[1], usedSegments)}{new string(_segChars[3], BarLength - usedSegments)}{_segChars[4]}");
+            if (usedSegments != BarLength)
+                sb[usedSegments + 1] = _segChars[2];
+            return sb.ToString();
         }
     }
 }

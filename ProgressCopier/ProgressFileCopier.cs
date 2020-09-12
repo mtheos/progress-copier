@@ -6,15 +6,12 @@ using System.Linq;
 namespace ProgressCopier {
     public class ProgressFileCopier : IProgressCopier {
         private const int MEGABYTE = 1024 * 1024;
-        private readonly ConsoleProgressBar _consoleProgressBar;
+        private readonly IProgressBar _progressBar;
         private FileStream _source;
         private FileStream _dest;
         public bool Cancel { private get; set; }
 
-
-        public ProgressFileCopier (int barLength = 10, double interval = 100) => _consoleProgressBar = new ConsoleProgressBar(barLength, interval);
-
-        public ProgressFileCopier (ConsoleProgressBar cpb) => _consoleProgressBar = cpb;
+        public ProgressFileCopier (IProgressBar cpb) => _progressBar = cpb;
 
         public void Copy (string sourceFile, string destinationFile, bool overwrite = false) {
             Cancel = false;
@@ -24,26 +21,26 @@ namespace ProgressCopier {
             using (_dest = new FileStream(destinationFile, overwrite ? FileMode.Create : FileMode.CreateNew, FileAccess.Write)) {
                 double totalBytes = 0;
                 int currentBlockSize;
-                _consoleProgressBar.SafeStartStopTimer();
+                // _ProgressBar.SafeStartStopTimer();
                 while ((currentBlockSize = _source.Read(buffer, 0, buffer.Length)) > 0) {
                     if (Cancel) {
                         CancelLogic(destinationFile);
                         return;
                     }
                     totalBytes += currentBlockSize;
-                    _consoleProgressBar.Percentage = totalBytes / _source.Length;
+                    _progressBar.Percentage = totalBytes / _source.Length;
                     _dest.Write(buffer, 0, currentBlockSize);
                 }
-                _consoleProgressBar.SafeStartStopTimer();
-                _consoleProgressBar.ForceUpdate();
+                // _ProgressBar.SafeStartStopTimer();
+                // _ProgressBar.ForceUpdate();
             }
-            _consoleProgressBar.OnComplete();
+            // _progressBar.OnComplete();
         }
 
         private void CancelLogic (string destinationFile) {
             _source.Dispose();
             _dest.Dispose();
-            _consoleProgressBar.SafeStartStopTimer();
+            // _ProgressBar.SafeStartStopTimer();
             if (File.Exists(destinationFile))
                 File.Delete(destinationFile);
         }
@@ -53,11 +50,11 @@ namespace ProgressCopier {
 
         private static bool OKToContinue (string sourceFile, string destinationFile, bool overWrite) {
             bool ok = true;
-            if (sourceFile == null) {
+            if (sourceFile is null) {
                 Console.WriteLine("Source path is null.");
                 ok = false;
             }
-            if (destinationFile == null) {
+            if (destinationFile is null) {
                 Console.WriteLine("Destination path is null.");
                 ok = false;
             }
