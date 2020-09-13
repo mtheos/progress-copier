@@ -2,8 +2,8 @@
 using System.Text;
 
 namespace ProgressCopier {
-    public class ConsoleProgressBar: ProgressBar {
-        public ConsoleProgressBar(int barLength = 10, double interval = 100, char[] segChars = null) : base(interval) {
+    public class ConsoleProgressBar : ProgressBar {
+        public ConsoleProgressBar(int barLength = 10, long interval = 100, char[] segChars = null) : base(interval) {
             BarLength = barLength;
             if (segChars == null)
                 return; // use default
@@ -11,8 +11,6 @@ namespace ProgressCopier {
                 throw new Exception(@"Array must contain 5 characters.");
             _segChars = segChars;
         }
-
-        private static readonly object ConsoleLock = new object();
 
         /// <summary>
         /// If used, must be a 5 char array with characters for

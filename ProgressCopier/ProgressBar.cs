@@ -7,24 +7,14 @@ using ProgressCopier.Annotations;
 namespace ProgressCopier {
     public abstract class ProgressBar : IProgressBar {
         private readonly Stopwatch _intervalTimer;
-        private readonly double _interval;
+        private readonly long _interval;
 
-        protected ProgressBar (double interval = 100) {
+        protected ProgressBar(long interval = 100) {
             _interval = interval;
             _intervalTimer = Stopwatch.StartNew();
-            PropertyChanged = PropertyChanged is null ? OnPropertyChanged : (PropertyChangedEventHandler)null;
         }
-
-        public event PropertyChangedEventHandler PropertyChanged;
-
-        public event ProgressChangedEventHandler ProgressChanged;
-
-        public delegate void ProgressChangedEventHandler ();
-
-        public event CompletedEventHandler Completed;
-
-        public delegate void CompletedEventHandler ();
-
+        public event IProgressBar.ProgressChangedEventHandler ProgressChanged;
+        public event IProgressBar.CompletedEventHandler Completed;
         private double _percentage;
         public double Percentage {
             get => _percentage;
@@ -32,30 +22,28 @@ namespace ProgressCopier {
                 if (value < 0 || value > 1)
                     throw new ArgumentOutOfRangeException(nameof(value), $"0 <= value <= 1 must hold. Given: {value}");
                 _percentage = value;
-                OnPropertyChanged();
+                NotifyPropertyChanged();
             }
         }
 
         [NotifyPropertyChangedInvocator]
-        protected virtual void OnPropertyChanged ([CallerMemberName] string propertyName = null) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        protected virtual void NotifyPropertyChanged([CallerMemberName] string propertyName = null) => OnPropertyChanged(this, new PropertyChangedEventArgs(propertyName));
 
-        public virtual void OnComplete () => Completed?.Invoke();
+        public virtual void OnComplete() => Completed?.Invoke();
 
-        private void OnPropertyChanged (object sender, PropertyChangedEventArgs propertyChangedEventArgs) => UpdateProgress();
-
-        private void UpdateProgress () {
+        private void OnPropertyChanged(object sender, PropertyChangedEventArgs propertyChangedEventArgs) {
             if (_intervalTimer.ElapsedMilliseconds > _interval) {
                 _intervalTimer.Restart();
-                ProgressChanged?.Invoke();
+                ProgressChanged?.Invoke(Percentage, GetProgressBar());
             }
             // ReSharper disable once CompareOfFloatsByEqualityOperator
-            if (Percentage == 1) { // Must hold as what we copy is exactly the whole file
-                ProgressChanged?.Invoke();
+            if (Percentage == 1) { // float can exactly store 1
+                ProgressChanged?.Invoke(Percentage, GetProgressBar());
                 OnComplete();
             }
         }
 
-        public abstract string GetProgressBar ();
+        public abstract string GetProgressBar();
 
     }
 }
