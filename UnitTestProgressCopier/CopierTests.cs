@@ -39,7 +39,7 @@ namespace UnitTestProgressCopier {
         [TestMethod]
         public void TestProgressCopierBar() {
             ProgressBar cpb = new ConsoleProgressBar();
-            ProgressFileCopier pfc = new ProgressFileCopier(cpb);
+            IFileCopier pfc = new ProgressFileCopier(cpb);
             double percent = cpb.Percentage;
             string progressBar = cpb.GetProgressBar();
             bool complete = default;
@@ -51,6 +51,24 @@ namespace UnitTestProgressCopier {
             Assert.AreEqual(percent, 0);
             Assert.AreEqual(progressBar, "[>---------]");
             Assert.AreEqual(complete, false);
+            pfc.Copy(SRC_PATH, DST_PATH, true);
+            Assert.AreEqual(percent, 1);
+            Assert.AreEqual(progressBar, "[==========]");
+            Assert.AreEqual(complete, true);
+        }
+
+        [TestMethod]
+        public void TestIProgressBarInterface() {
+            IProgressBar cpb = new ConsoleProgressBar();
+            IFileCopier pfc = new ProgressFileCopier(cpb);
+            double percent = default;
+            string progressBar = default;
+            bool complete = default;
+            cpb.ProgressChanged += (percentage, bar) => {
+                                       percent = percentage;
+                                       progressBar = bar;
+                                   };
+            cpb.Completed += delegate { complete = true; };
             pfc.Copy(SRC_PATH, DST_PATH, true);
             Assert.AreEqual(percent, 1);
             Assert.AreEqual(progressBar, "[==========]");

@@ -13,8 +13,19 @@ namespace ProgressCopier {
             _interval = interval;
             _intervalTimer = Stopwatch.StartNew();
         }
-        public event IProgressBar.ProgressChangedEventHandler ProgressChanged;
-        public event IProgressBar.CompletedEventHandler Completed;
+
+        private IProgressBar.ProgressChangedEventHandler _progressChanged;
+        public event IProgressBar.ProgressChangedEventHandler ProgressChanged {
+            add => _progressChanged += value;
+            remove => _progressChanged -= value;
+        }
+
+        private IProgressBar.CompletedEventHandler _completed;
+        public event IProgressBar.CompletedEventHandler Completed {
+            add => _completed += value;
+            remove => _completed -= value;
+        }
+
         private double _percentage;
         public double Percentage {
             get => _percentage;
@@ -23,22 +34,23 @@ namespace ProgressCopier {
                     throw new ArgumentOutOfRangeException(nameof(value), $"0 <= value <= 1 must hold. Given: {value}");
                 _percentage = value;
                 NotifyPropertyChanged();
+                ProgressChanged += (percentage, bar) => Console.WriteLine(percentage);
             }
         }
 
         [NotifyPropertyChangedInvocator]
         protected virtual void NotifyPropertyChanged([CallerMemberName] string propertyName = null) => OnPropertyChanged(this, new PropertyChangedEventArgs(propertyName));
 
-        public virtual void OnComplete() => Completed?.Invoke();
+        public virtual void OnComplete() => _completed?.Invoke();
 
         private void OnPropertyChanged(object sender, PropertyChangedEventArgs propertyChangedEventArgs) {
             if (_intervalTimer.ElapsedMilliseconds > _interval) {
                 _intervalTimer.Restart();
-                ProgressChanged?.Invoke(Percentage, GetProgressBar());
+                _progressChanged?.Invoke(Percentage, GetProgressBar());
             }
             // ReSharper disable once CompareOfFloatsByEqualityOperator
             if (Percentage == 1) { // float can exactly store 1
-                ProgressChanged?.Invoke(Percentage, GetProgressBar());
+                _progressChanged?.Invoke(Percentage, GetProgressBar());
                 OnComplete();
             }
         }

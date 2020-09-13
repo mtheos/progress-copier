@@ -4,8 +4,6 @@
         public delegate void CompletedEventHandler();
         public event ProgressChangedEventHandler ProgressChanged;
         public event CompletedEventHandler Completed;
-        double Percentage { get; set; }
-        // string GetProgressBar();
-        // void OnComplete();
+        double Percentage { set; }
     }
 }
