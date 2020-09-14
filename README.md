@@ -10,5 +10,5 @@ cpb.ProgressChanged += (percentage, bar) => {
                             Console.Write($"What a beautiful bar {bar} {percentage:P0} in my line :)");
                         };
 cpb.Completed += delegate { Console.WriteLine("\nDone"); };
-pfc.Copy(@"F:\src.dat", @"F:\dst.dat", true);
+pfc.Copy("src.dat", "dst.dat", true);
 ```
