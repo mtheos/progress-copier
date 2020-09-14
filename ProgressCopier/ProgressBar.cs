@@ -34,7 +34,6 @@ namespace ProgressCopier {
                     throw new ArgumentOutOfRangeException(nameof(value), $"0 <= value <= 1 must hold. Given: {value}");
                 _percentage = value;
                 NotifyPropertyChanged();
-                ProgressChanged += (percentage, bar) => Console.WriteLine(percentage);
             }
         }
 
