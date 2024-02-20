@@ -1,5 +1,6 @@
 ﻿namespace ProgressCopier {
     public interface IFileCopier {
-        void Copy(string sourceFile, string destinationFile, bool overwrite = false);
+        bool Move(string sourceFile, string destinationFile, bool overwrite = false);
+        bool Copy(string sourceFile, string destinationFile, bool overwrite = false);
     }
 }

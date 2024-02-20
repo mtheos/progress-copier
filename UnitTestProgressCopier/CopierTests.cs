@@ -27,7 +27,7 @@ namespace UnitTestProgressCopier {
 
         [TestMethod]
         public void TestProgressCopier() {
-            IFileCopier pfc = new ProgressFileCopier(new ConsoleProgressBar());
+            IFileCopier pfc = new ProgressFileCopier(new AsciiProgressBar());
             pfc.Copy(SRC_PATH, DST_PATH, true);
             Assert.IsTrue(File.Exists(DST_PATH));
             Assert.IsTrue(FileComparer.Compare(SRC_PATH, DST_PATH));
@@ -35,7 +35,7 @@ namespace UnitTestProgressCopier {
 
         [TestMethod]
         public void TestProgressCopierBar() {
-            ProgressBar cpb = new ConsoleProgressBar();
+            ProgressBar cpb = new AsciiProgressBar();
             IFileCopier pfc = new ProgressFileCopier(cpb);
             double percent = cpb.Percentage;
             string progressBar = cpb.GetProgressBar();
@@ -56,7 +56,7 @@ namespace UnitTestProgressCopier {
 
         [TestMethod]
         public void TestIProgressBarInterface() {
-            IProgressBar cpb = new ConsoleProgressBar();
+            IProgressBar cpb = new AsciiProgressBar();
             IFileCopier pfc = new ProgressFileCopier(cpb);
             double percent = default;
             string progressBar = default;

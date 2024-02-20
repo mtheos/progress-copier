@@ -2,8 +2,8 @@
 using System.Text;
 
 namespace ProgressCopier {
-    public class ConsoleProgressBar : ProgressBar {
-        public ConsoleProgressBar(int barLength = 10, long interval = 100, char[] segChars = null) : base(interval) {
+    public class AsciiProgressBar : ProgressBar {
+        public AsciiProgressBar(int barLength = 10, long interval = 100, char[] segChars = null) : base(interval) {
             BarLength = barLength;
             if (segChars == null)
                 return; // use default

@@ -4,11 +4,11 @@ using ProgressCopier;
 
 namespace UnitTestProgressCopier {
     [TestClass]
-    public class ConsoleProgressBarTests {
+    public class AsciiProgressBarTests {
         private ProgressBar _cpb;
         [TestInitialize]
         public void Init() {
-            _cpb = new ConsoleProgressBar(interval: 0);
+            _cpb = new AsciiProgressBar(interval: 0);
         }
         [TestMethod]
         public void SimpleBarTest() {

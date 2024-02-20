@@ -9,9 +9,19 @@ namespace ProgressCopier {
         protected byte[] Buffer { get; set; }
         public bool Cancel { private get; set; }
 
-        public virtual void Copy(string sourceFile, string destinationFile, bool overwrite=false) {
+        public virtual bool Move(string sourceFile, string destinationFile, bool overwrite=false) {
+            if (Copy(sourceFile, destinationFile, overwrite)) {
+                File.Delete(sourceFile);
+                return true;
+            }
+            return false;
+        }
+
+        public virtual bool Copy(string sourceFile, string destinationFile, bool overwrite=false) {
             Cancel = false;
-            if (!OKToContinue(sourceFile, destinationFile, overwrite)) return;
+            if (!OKToContinue(sourceFile, destinationFile, overwrite)) {
+                return false;
+            }
             Buffer = new byte[MEGABYTE]; // 1MB buffer
             using Stream source = new FileStream(sourceFile, FileMode.Open, FileAccess.Read);
             using Stream dest = new FileStream(destinationFile, overwrite ? FileMode.Create : FileMode.CreateNew, FileAccess.Write);
@@ -20,13 +30,15 @@ namespace ProgressCopier {
             while ((block = source.Read(Buffer, 0, Buffer.Length)) > 0) {
                 if (Cancel) {
                     DeleteIncomplete(destinationFile);
-                    break;
+                    Buffer = null;
+                    return false;
                 }
                 dest.Write(Buffer, 0, block);
                 totalBytes += block;
                 ReportProgress(totalBytes, source.Length);
             }
             Buffer = null;
+            return true;
         }
 
         protected virtual void ReportProgress(long copied, long size) { }
@@ -40,7 +52,7 @@ namespace ProgressCopier {
         private static long GetFreeSpace(char driveLetter) => (from drive in DriveInfo.GetDrives() where drive.IsReady && drive.Name == $@"{driveLetter}:\" select drive.AvailableFreeSpace).Single();
 
         private static bool OKToContinue(string sourceFile, string destinationFile, bool overWrite) {
-            bool ok = true;
+            var ok = true;
             if (sourceFile is null) {
                 Console.WriteLine("Source path is null.");
                 ok = false;
@@ -50,8 +62,8 @@ namespace ProgressCopier {
                 ok = false;
             }
             if (ok) {
-                long fileLength = new FileInfo(sourceFile).Length;
-                long freeSpace = GetFreeSpace(destinationFile.First());
+                var fileLength = new FileInfo(sourceFile).Length;
+                var freeSpace = GetFreeSpace(destinationFile.First());
                 if (fileLength > freeSpace)
                     Console.WriteLine($"There is not enough space on {destinationFile.First()}. {((float)fileLength - freeSpace) / 1_000_000} more MB are needed");
             }
